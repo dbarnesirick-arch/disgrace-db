@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Disgrace DB | Batch Publisher</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#111019;color:#f4effa;font:16px/1.55 system-ui,sans-serif}a{color:#c8b1ff}.wrap{width:min(1060px,calc(100% - 32px));margin:auto}.top{padding:20px 0;border-bottom:1px solid #423752;background:#181323}.top a{text-decoration:none}.title{margin:24px 0 14px}h1{font:700 clamp(2rem,5vw,3rem) Georgia,serif;margin:8px 0}h2{font-size:1.2rem}p{margin:8px 0 14px}.muted{color:#c9bdd5}.panel{padding:22px;border:1px solid #51415e;border-radius:16px;background:#211a2c;margin:20px 0}input[type=file]{width:100%;padding:22px;border:2px dashed #77618b;border-radius:9px;background:#17121e;color:#ddd}input[type=file]::file-selector-button{padding:10px;border-radius:7px;background:#4c346d;color:#fff;border:0;margin-right:12px;cursor:pointer}.row{display:flex;flex-wrap:wrap;gap:14px;align-items:center}.button{background:#e2b8fb;border:0;border-radius:8px;padding:12px 18px;color:#25152d;font-weight:750;cursor:pointer}.button.secondary{background:#42324f;color:#f4effa}.button:disabled{opacity:.45;cursor:default}.tick{display:flex;align-items:start;gap:8px;margin:15px 0}.tick input{margin-top:5px}.stat{display:inline-flex;padding:8px 12px;border-radius:8px;background:#32283c;font-weight:650}.results{max-height:460px;overflow:auto;border:1px solid #534361;border-radius:8px;background:#16121e;padding:12px;white-space:pre-wrap;font:13px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace}.important{border-left:3px solid #e2b8fb;padding-left:12px}.ok{color:#a6efc6}.warn{color:#ffcf86}.error{color:#ff9595}code{background:#34283e;padding:.15rem .3rem;border-radius:4px}footer{padding:26px 0 45px;color:#c9bdd5}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap"><a href="./">← Back to Disgrace DB</a> · <strong>Batch Import &amp; Publish</strong></div></header>
+<main class="wrap">
+<section class="title"><div class="muted">CREATOR TOOLS · BUDDYFIGHT</div><h1>Batch Publisher</h1><p class="muted">Update the Disgrace DB catalog using legacy <strong>CardStat TXT</strong> files, card JSON files, and multiple PNG images in one batch.</p></section>
+<section class="panel">
+<h2>1. Load the currently published collection</h2>
+<div class="row"><span id="loaded" class="stat">Loading cards.json…</span><button class="button secondary" id="reload">Reload published cards</button></div>
+<p class="muted">This page reads the public catalog. Your changes stay on this computer until you commit the downloaded publishing ZIP through GitHub Desktop.</p>
+</section>
+<section class="panel">
+<h2>2. Select old TXT files and card images together</h2>
+<p>Examples: <code>Hashveld.txt</code>, <code>cards.json</code>, <code>n7944.png</code>, <code>n7945.png</code>.</p>
+<input id="files" type="file" multiple accept=".txt,.json,.png,.jpg,.jpeg,.webp,text/plain,application/json,image/png,image/jpeg,image/webp" aria-label="Choose multiple TXT, JSON and image files">
+<label class="tick"><input type="checkbox" id="allow-edits"><span><strong>Allow existing card text/stat updates.</strong> Off by default so old TXT files don't accidentally overwrite cards we've already published. Images can be updated without this.</span></label>
+<div class="row"><button class="button" id="review" disabled>Review selected files</button><span id="selected" class="muted">No files selected</span></div>
+</section>
+<section class="panel">
+<h2>3. Review changes before exporting</h2>
+<div class="row"><span class="stat" id="added">0 new cards</span><span class="stat" id="updated">0 existing card-text updates</span><span class="stat" id="artwork">0 new artwork files</span></div>
+<p id="hint" class="muted">Choose files and click Review. Image filenames must contain a numeric card ID, such as n7944.png.</p>
+<pre id="report" class="results" aria-live="polite">No files reviewed.</pre>
+<div class="row" style="margin-top:18px"><button class="button" id="export" disabled>Download publishing ZIP</button></div>
+<p class="muted important"><strong>Publishing is not automatic.</strong> The downloaded ZIP includes updated <code>cards.json</code> for Godot and <code>cards-data.js</code> for the website, plus the new artwork. Extract it into your GitHub repository, commit, and push.</p>
+</section>
+</main>
+<footer class="wrap">Public repository: <a href="https://github.com/dbarnesirick-arch/disgrace-db">disgrace-db</a>. No access tokens or passwords are used here.</footer>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const textEncoder = new TextEncoder();
+const cardTypeMap = {flag:5,monster:1,item:2,spell:3,impact:4,"impact monster":6};
+let published = [];
+let staged = null;
+const basename = name => name.split(/[\\/]/).pop();
+const canon = v => String(v ?? "").trim();
+const normName = v => canon(v).toLowerCase().replace(/\s+/g," ");
+const validId = id => /^\d+$/.test(String(id)) && Number(id) > 0;
+const nID = id => validId(id) ? String(Number(id)) : "";
+const icon = type => type === 1 ? "Monster" : type === 2 ? "Item" : type === 3 ? "Spell" : type === 4 ? "Impact" : type === 5 ? "Flag" : type === 6 ? "Impact Monster" : "Other";
+
+async function reloadPublished(){
+  $("loaded").textContent = "Loading cards.json…";
+  $("review").disabled = true;
+  $("export").disabled = true;
+  staged = null;
+  try {
+    const resp=await fetch("./cards.json",{cache:"no-store"});
+    if(!resp.ok) throw Error("HTTP " + resp.status);
+    const data=await resp.json();
+    if(!Array.isArray(data)) throw Error("cards.json is not an array");
+    const ids=new Set();
+    for(const card of data){
+      const id=nID(card.id);
+      if(!id||ids.has(id))throw Error("Invalid or duplicate ID in published catalog: " + card.id);
+      ids.add(id);
+    }
+    published=data;
+    $("loaded").textContent=`${data.length.toLocaleString()} published cards loaded`;
+    $("review").disabled=false;
+  } catch(error) {
+    $("loaded").textContent="Cannot load the published card feed";
+    $("report").textContent="Load error: " + error.message + ". Open this tool from your hosted GitHub Pages site, not as a file:/// page.";
+  }
+}
+
+function parseGml(raw, filename){
+  const records=[];
+  const blockRe=/^CardStat\s*=\s*(\d+)\s*\r?\n\s*\{\s*\r?\n([\s\S]*?)^\s*\}\s*$/gm;
+  for(const match of raw.matchAll(blockRe)){
+    const id=nID(match[1]); const body=match[2];
+    const fieldRe=/^global\.Card(\w+)\[CardStat\]\s*=\s*/gm;
+    const fields={}; const heads=Array.from(body.matchAll(fieldRe));
+    for(let i=0;i<heads.length;i++){
+      const field=heads[i][1];
+      let value=body.slice(heads[i].index+heads[i][0].length,i+1<heads.length?heads[i+1].index:body.length).trim();
+      if(value.startsWith('"')&&value.endsWith('"')){
+        value=value.slice(1,-1).replace(/"\s*\+\s*chr\(34\)\s*\+\s*"/gi,'"');
+      } else if (/^-?\d+$/.test(value)) value=Number(value);
+      fields[field]=value;
+    }
+    if(!id||!canon(fields.Name)) continue;
+    const lastLine=canon(fields.Text).split(/\r?\n/).map(x=>x.trim()).filter(Boolean).at(-1) ?? "";
+    const tags=lastLine.includes("/")?lastLine.split("/").map(x=>x.trim()).filter(Boolean):[];
+    const collection=tags[0] || filename.replace(/\.[^.]+$/,"") || "Custom";
+    const card={id,name:canon(fields.Name),type:Number(fields.Type??0),world:fields.World??"",effect:canon(fields.Text),flavor:canon(fields.Flavor),collection,collections:[collection],attributes:tags.slice(1)};
+    for(const [from,to] of [["Size","size"],["Power","power"],["Defense","defense"],["Crit","critical"]]){
+      if(fields[from]!==undefined && fields[from]!=="") card[to]=Number(fields[from]);
+    }
+    records.push(card);
+  }
+  return records;
+}
+
+function parseJson(raw){
+  const doc=JSON.parse(raw);
+  const arr=Array.isArray(doc)?doc:(doc && Array.isArray(doc.cards) ? doc.cards : null);
+  if(!arr) throw Error("JSON must be an array or {cards:[...]}.");
+  return arr.map(input=>{
+    if(!input||typeof input!=="object")return null;
+    const card=structuredClone(input);
+    card.id=nID(card.id);
+    const t=card.card_type??card.type;
+    card.type=typeof t==='number'?t:(/^\d+$/.test(String(t))?Number(t):cardTypeMap[String(t).toLowerCase()]??0);
+    card.effect=canon(card.effect??card.description);
+    card.name=canon(card.name);
+    card.collections=Array.isArray(card.collections)?card.collections:[canon(card.collection||'Custom')];
+    card.attributes=Array.isArray(card.attributes)?card.attributes:[];
+    // Only a matching uploaded image should create a new shared image URL.
+    if(typeof card.image==='string'&&card.image.startsWith('data:'))delete card.image;
+    return card;
+  }).filter(Boolean);
+}
+
+function imageId(filename){
+  const file=basename(filename);
+  const found=/^(?:n|card[_-]?|image[_-]?)?(\d+)(?:[-_].*)?\.(png|jpe?g|webp)$/i.exec(file);
+  return found?nID(found[1]):"";
+}
+
+async function hashBytes(bytes){
+  const digest=new Uint8Array(await crypto.subtle.digest("SHA-256",bytes));
+  return Array.from(digest.slice(0,6),x=>x.toString(16).padStart(2,'0')).join('');
+}
+function arraysEqual(a,b){return JSON.stringify(a)===JSON.stringify(b);}
+function sameDefinition(a,b){
+  return ['name','type','world','effect','flavor','size','power','defense','critical'].every(k=>canon(a[k])===canon(b[k]));
+}
+
+async function review(){
+  const inputs=Array.from($("files").files);
+  $("export").disabled=true;
+  staged=null;
+  if(!inputs.length){$("report").textContent="Select files first.";return;}
+  const lines=[];const proposed=new Map();const media=new Map();const originals=new Map(published.map(c=>[nID(c.id),c]));
+  let skipped=0;
+  for(const file of inputs){
+    const name=basename(file.name); const extension=name.split('.').at(-1).toLowerCase();
+    if(['png','jpg','jpeg','webp'].includes(extension)){
+      const id=imageId(name);
+      if(!id){lines.push(`SKIP image ${name}: file name must contain a numeric card ID, e.g. n7944.png`);skipped++;continue;}
+      if(file.size>12*1024*1024){lines.push(`SKIP image ${name}: over 12 MB`);skipped++;continue;}
+      if(media.has(id)){lines.push(`SKIP image ${name}: two images for card #${id} in one batch`);skipped++;continue;}
+      media.set(id,file);
+      continue;
+    }
+    if(!['txt','json'].includes(extension)){lines.push('SKIP unsupported file: '+name);skipped++;continue;}
+    if(file.size>8*1024*1024){lines.push('SKIP too-large card file: '+name);skipped++;continue;}
+    try{
+      const contents=await file.text();
+      const entries=extension==='json'||contents.trimStart().startsWith('[')||contents.trimStart().startsWith('{')?parseJson(contents):parseGml(contents,name);
+      if(!entries.length){lines.push(`No cards found in ${name}; expected CardStat records or JSON cards array`);skipped++;continue;}
+      lines.push(`${name}: read ${entries.length} card records`);
+      for(const card of entries){
+        const id=nID(card.id);
+        if(!id||!card.name||!Number.isInteger(Number(card.type))||Number(card.type)<1||Number(card.type)>6){
+          lines.push(`  SKIP invalid card: #${card.id} ${card.name||''}`);skipped++;continue;
+        }
+        if(proposed.has(id)){
+          if(!sameDefinition(proposed.get(id),card))lines.push(`  CONFLICT: two different TXT/JSON definitions for #${id}; first wins`);
+          continue;
+        }
+        proposed.set(id,card);
+      }
+    }catch(e){lines.push(`ERROR parsing ${name}: ${e.message}`);skipped++;}
+  }
+  const next=published.map(card=>structuredClone(card));
+  const index=new Map(next.map((c,i)=>[nID(c.id),i]));
+  const newCards=[];const updatedCards=[];const conflicts=[];
+  for(const [id,input] of proposed){
+    if(index.has(id)){
+      const existing=next[index.get(id)];
+      if(normName(existing.name)!==normName(input.name)){
+        conflicts.push(`#${id}: published "${existing.name}" vs uploaded "${input.name}"`);
+        lines.push(`BLOCKED ID/name conflict #${id}: ${input.name}`);continue;
+      }
+      if($("allow-edits").checked){
+        // Keep published collection metadata/art unless explicitly provided.
+        const patched={...existing,...input,image:existing.image??input.image,collections:input.collections?.length?input.collections:existing.collections,attributes:input.attributes?.length?input.attributes:existing.attributes};
+        if(!sameDefinition(existing,patched)){
+          next[index.get(id)]=patched;updatedCards.push(id);
+        }
+      }
+    }else{
+      const entry={...input,id};
+      if(!Array.isArray(entry.collections)||!entry.collections.length)entry.collections=['Custom'];
+      if(!Array.isArray(entry.attributes))entry.attributes=[];
+      index.set(id,next.length);next.push(entry);newCards.push(id);
+    }
+  }
+  const assets=[];const artIds=[];
+  for(const [id,file] of media){
+    if(!index.has(id)){
+      lines.push(`SKIP ${file.name}: card #${id} is not in published data or this batch. Include its TXT too.`);skipped++;continue;
+    }
+    if(conflicts.some(x=>x.startsWith('#'+id+':'))){lines.push(`SKIP ${file.name}: card ID conflict`);skipped++;continue;}
+    const bytes=new Uint8Array(await file.arrayBuffer());
+    const sig=bytes.slice(0,12);
+    const validPng=bytes.length>=8&&sig[0]===137&&sig[1]===80&&sig[2]===78&&sig[3]===71;
+    const validJpg=bytes.length>=3&&sig[0]===0xff&&sig[1]===0xd8&&sig[2]===0xff;
+    const validWebp=bytes.length>=12&&String.fromCharCode(...sig.slice(0,4))==='RIFF'&&String.fromCharCode(...sig.slice(8,12))==='WEBP';
+    const ext=file.name.toLowerCase().split('.').at(-1);
+    if(!((ext==='png'&&validPng)||(ext==='webp'&&validWebp)||(['jpg','jpeg'].includes(ext)&&validJpg))){
+      lines.push(`SKIP ${file.name}: extension doesn't match image format`);skipped++;continue;
+    }
+    const sha=await hashBytes(bytes);
+    const path=`assets/cards/n${id}-${sha}.${ext==='jpeg'?'jpg':ext}`;
+    const card=next[index.get(id)];
+    if(card.image===path){lines.push(`UNCHANGED image #${id}: ${file.name}`);continue;}
+    card.image=path;
+    assets.push({path,bytes});artIds.push(id);
+  }
+  if(newCards.length) lines.push('NEW: '+newCards.map(x=>'#'+x).join(', '));
+  if(updatedCards.length)lines.push('TEXT/STATS UPDATED: '+updatedCards.map(x=>'#'+x).join(', '));
+  if(artIds.length)lines.push('NEW/REPLACED ART: '+artIds.map(x=>'#'+x).join(', '));
+  if(conflicts.length)lines.push('BLOCKED NAME/ID CONFLICTS: '+conflicts.join('; '));
+  lines.push(`REVIEW SUMMARY: ${newCards.length} new cards, ${updatedCards.length} card text/stat updates, ${assets.length} artwork files; ${skipped} skipped files/records.`);
+  if(!newCards.length&&!updatedCards.length&&!assets.length)lines.push('Nothing to export. No cards were changed.');
+  $("added").textContent=`${newCards.length} new cards`;
+  $("updated").textContent=`${updatedCards.length} text/stat changes`;
+  $("artwork").textContent=`${assets.length} artwork files`;
+  $("report").textContent=lines.join('\n');
+  staged={cards:next,assets,added:newCards,changed:updatedCards,artIds,skipped};
+  $("export").disabled=!(newCards.length||updatedCards.length||assets.length);
+}
+
+// Tiny dependency-free ZIP writer (ZIP STORE, standard UTF-8 filenames).
+const crcTable=Uint32Array.from({length:256},(_,n)=>{let c=n;for(let i=0;i<8;i++)c=c&1?(0xEDB88320^(c>>>1)):(c>>>1);return c>>>0;});
+function crc32(bytes){let crc=0xFFFFFFFF;for(const x of bytes)crc=crcTable[(crc^x)&255]^(crc>>>8);return(crc^0xFFFFFFFF)>>>0;}
+function concat(parts){let size=parts.reduce((n,x)=>n+x.length,0);const out=new Uint8Array(size);let p=0;for(const part of parts){out.set(part,p);p+=part.length;}return out;}
+function zipFiles(entries){
+  const local=[];const central=[];let off=0;
+  for(const [filename,data] of entries){
+    const name=textEncoder.encode(filename);const bytes=typeof data==='string'?textEncoder.encode(data):data;
+    const crc=crc32(bytes);const size=bytes.length;
+    const lh=new Uint8Array(30+name.length);const l=new DataView(lh.buffer);
+    l.setUint32(0,0x04034b50,true);l.setUint16(4,20,true);l.setUint16(6,0x0800,true);l.setUint16(8,0,true);
+    l.setUint32(14,crc,true);l.setUint32(18,size,true);l.setUint32(22,size,true);l.setUint16(26,name.length,true);lh.set(name,30);
+    local.push(lh,bytes);
+    const ch=new Uint8Array(46+name.length);const c=new DataView(ch.buffer);
+    c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);
+    c.setUint32(16,crc,true);c.setUint32(20,size,true);c.setUint32(24,size,true);c.setUint16(28,name.length,true);
+    c.setUint32(42,off,true);ch.set(name,46);central.push(ch);
+    off+=lh.length+size;
+  }
+  const dir=concat(central);const tail=new Uint8Array(22);const v=new DataView(tail.buffer);
+  v.setUint32(0,0x06054b50,true);v.setUint16(8,entries.length,true);v.setUint16(10,entries.length,true);
+  v.setUint32(12,dir.length,true);v.setUint32(16,off,true);
+  return new Blob([...local,dir,tail],{type:'application/zip'});
+}
+async function exportChanges(){
+  if(!staged)return;
+  $("export").disabled=true;
+  try {
+    const next=staged.cards;
+    const json=JSON.stringify(next,null,2)+'\n';
+    const js='/* Published catalog for Disgrace DB. Generated by Batch Publisher. */\nwindow.catalog = '+JSON.stringify(next)+';\n';
+    const touched=new Set([...staged.added,...staged.changed,...staged.artIds]);
+    const importCards=next.filter(c=>touched.has(nID(c.id)));
+    const readme='DISGRACE DB BATCH EXPORT\n\n1. Open the local disgrace-db repository folder using GitHub Desktop > Repository > Show in Explorer.\n2. Extract this ZIP. Copy cards.json and cards-data.js into repository root.\n3. Merge assets/cards into the existing assets/cards folder; NEVER delete older images.\n4. Commit and Push origin in GitHub Desktop.\n5. Website reads cards-data.js; Godot reads cards.json after its next sync.\n6. legacy_import.json is optional for older manual JSON import (new card records only; existing duplicates are skipped by old importers).\nThis ZIP does NOT publish anything by itself.\n';
+    const entries=[['cards.json',json],['cards-data.js',js],['legacy_import.json',JSON.stringify(importCards,null,2)+'\n'],['README_IMPORT.txt',readme],...staged.assets.map(x=>[x.path,x.bytes])];
+    const blob=zipFiles(entries);
+    const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download='Disgrace_DB_Card_Update.zip';document.body.append(link);link.click();
+    setTimeout(()=>{URL.revokeObjectURL(link.href);link.remove();},5000);
+    $("hint").textContent=`Exported ${entries.length} files. Nothing is online until you commit and push the ZIP contents.`;
+  }catch(e){$("report").textContent+='\nEXPORT ERROR: '+e.message;}
+  finally{$("export").disabled=false;}
+}
+$("reload").addEventListener('click',reloadPublished);
+$("review").addEventListener('click',review);
+$("export").addEventListener('click',exportChanges);
+$("files").addEventListener('change',()=>{$("selected").textContent=`${$("files").files.length} file(s) selected`;$("export").disabled=true;staged=null;});
+$("allow-edits").addEventListener('change',()=>{$("export").disabled=true;staged=null;$("hint").textContent='Review the selected files again after changing this option.';});
+reloadPublished();
+</script>
+</body>
+</html>

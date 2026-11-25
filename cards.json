@@ -30777,5 +30777,27 @@
       "Soulguard"
     ],
     "image": "assets/cards/1659_3206_568d967d.jpg"
+  },
+  {
+    "id": "7944",
+    "name": "Dragonic Thunder Knight, Raizen",
+    "type": 1,
+    "world": 18,
+    "effect": "Grave Thunder\n[Counter] Once per turn, when your opponent activates the effect of a card in their drop zone, nullify that effect.\n\n[Vanguard] Thunder Relay\nAfter this card attacks, at the end of that battle, you may put this card into the drop zone.\n\nIf you do, call 1 other \"Lightning\" monster from your drop zone to the same area without paying its [Call Cost].\n\nAfter the monster called by this effect attacks, at the end of that battle, put it into the drop zone.\nIf you do, call this card from your drop zone to the same area and stand it.\n\nYou may use \"Thunder Relay\" up to three times per turn.\n\nWhile a \"Calamity\" Dragon or \"Calamity\" Dragon Tamer is on your field, this card becomes size 0.\n\n[Over Penetrate]\n[Bolt Breather]\n[Lightning Strike]\n\nHashveld/Dragon/Lightning/Dragonic Knight",
+    "collection": "Hashveld",
+    "flavor": "",
+    "collections": [
+      "Hashveld"
+    ],
+    "attributes": [
+      "Dragon",
+      "Lightning",
+      "Dragonic Knight"
+    ],
+    "image": "assets/cards/n7944-8be14afd1b04.png",
+    "size": 2,
+    "power": 14000,
+    "defense": 14000,
+    "critical": 4
   }
 ]
