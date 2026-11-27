@@ -1,285 +1,71 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Disgrace DB | Batch Publisher</title>
-<style>
-:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#111019;color:#f4effa;font:16px/1.55 system-ui,sans-serif}a{color:#c8b1ff}.wrap{width:min(1060px,calc(100% - 32px));margin:auto}.top{padding:20px 0;border-bottom:1px solid #423752;background:#181323}.top a{text-decoration:none}.title{margin:24px 0 14px}h1{font:700 clamp(2rem,5vw,3rem) Georgia,serif;margin:8px 0}h2{font-size:1.2rem}p{margin:8px 0 14px}.muted{color:#c9bdd5}.panel{padding:22px;border:1px solid #51415e;border-radius:16px;background:#211a2c;margin:20px 0}input[type=file]{width:100%;padding:22px;border:2px dashed #77618b;border-radius:9px;background:#17121e;color:#ddd}input[type=file]::file-selector-button{padding:10px;border-radius:7px;background:#4c346d;color:#fff;border:0;margin-right:12px;cursor:pointer}.row{display:flex;flex-wrap:wrap;gap:14px;align-items:center}.button{background:#e2b8fb;border:0;border-radius:8px;padding:12px 18px;color:#25152d;font-weight:750;cursor:pointer}.button.secondary{background:#42324f;color:#f4effa}.button:disabled{opacity:.45;cursor:default}.tick{display:flex;align-items:start;gap:8px;margin:15px 0}.tick input{margin-top:5px}.stat{display:inline-flex;padding:8px 12px;border-radius:8px;background:#32283c;font-weight:650}.results{max-height:460px;overflow:auto;border:1px solid #534361;border-radius:8px;background:#16121e;padding:12px;white-space:pre-wrap;font:13px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace}.important{border-left:3px solid #e2b8fb;padding-left:12px}.ok{color:#a6efc6}.warn{color:#ffcf86}.error{color:#ff9595}code{background:#34283e;padding:.15rem .3rem;border-radius:4px}footer{padding:26px 0 45px;color:#c9bdd5}
-</style>
-</head>
-<body>
-<header class="top"><div class="wrap"><a href="./">← Back to Disgrace DB</a> · <strong>Batch Import &amp; Publish</strong></div></header>
-<main class="wrap">
-<section class="title"><div class="muted">CREATOR TOOLS · BUDDYFIGHT</div><h1>Batch Publisher</h1><p class="muted">Update the Disgrace DB catalog using legacy <strong>CardStat TXT</strong> files, card JSON files, and multiple PNG images in one batch.</p></section>
-<section class="panel">
-<h2>1. Load the currently published collection</h2>
-<div class="row"><span id="loaded" class="stat">Loading cards.json…</span><button class="button secondary" id="reload">Reload published cards</button></div>
-<p class="muted">This page reads the public catalog. Your changes stay on this computer until you commit the downloaded publishing ZIP through GitHub Desktop.</p>
-</section>
-<section class="panel">
-<h2>2. Select old TXT files and card images together</h2>
-<p>Examples: <code>Hashveld.txt</code>, <code>cards.json</code>, <code>n7944.png</code>, <code>n7945.png</code>.</p>
-<input id="files" type="file" multiple accept=".txt,.json,.png,.jpg,.jpeg,.webp,text/plain,application/json,image/png,image/jpeg,image/webp" aria-label="Choose multiple TXT, JSON and image files">
-<label class="tick"><input type="checkbox" id="allow-edits"><span><strong>Allow existing card text/stat updates.</strong> Off by default so old TXT files don't accidentally overwrite cards we've already published. Images can be updated without this.</span></label>
-<div class="row"><button class="button" id="review" disabled>Review selected files</button><span id="selected" class="muted">No files selected</span></div>
-</section>
-<section class="panel">
-<h2>3. Review changes before exporting</h2>
-<div class="row"><span class="stat" id="added">0 new cards</span><span class="stat" id="updated">0 existing card-text updates</span><span class="stat" id="artwork">0 new artwork files</span></div>
-<p id="hint" class="muted">Choose files and click Review. Image filenames must contain a numeric card ID, such as n7944.png.</p>
-<pre id="report" class="results" aria-live="polite">No files reviewed.</pre>
-<div class="row" style="margin-top:18px"><button class="button" id="export" disabled>Download publishing ZIP</button></div>
-<p class="muted important"><strong>Publishing is not automatic.</strong> The downloaded ZIP includes updated <code>cards.json</code> for Godot and <code>cards-data.js</code> for the website, plus the new artwork. Extract it into your GitHub repository, commit, and push.</p>
-</section>
-</main>
-<footer class="wrap">Public repository: <a href="https://github.com/dbarnesirick-arch/disgrace-db">disgrace-db</a>. No access tokens or passwords are used here.</footer>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Disgrace DB | Batch Publisher</title><style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#111019;color:#f4effa;font:16px/1.55 system-ui,sans-serif}a{color:#c8b1ff}.wrap{width:min(1060px,calc(100% - 32px));margin:auto}.top{padding:20px 0;border-bottom:1px solid #423752;background:#181323}.top a{text-decoration:none}h1{font:700 clamp(2rem,5vw,3rem) Georgia,serif;margin:8px 0}h2{font-size:1.2rem}p{margin:8px 0 14px}.muted{color:#c9bdd5}.panel{padding:22px;border:1px solid #51415e;border-radius:16px;background:#211a2c;margin:20px 0}input[type=file]{width:100%;padding:22px;border:2px dashed #77618b;border-radius:9px;background:#17121e;color:#ddd}input[type=file]::file-selector-button{padding:10px;border-radius:7px;background:#4c346d;color:#fff;border:0;margin-right:12px;cursor:pointer}.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}.button{background:#e2b8fb;border:0;border-radius:8px;padding:12px 18px;color:#25152d;font-weight:750;cursor:pointer}.button.secondary{background:#42324f;color:#f4effa}.button:disabled{opacity:.45;cursor:default}.tick{display:flex;align-items:start;gap:8px;margin:15px 0}.tick input{margin-top:5px}.stat{display:inline-flex;padding:8px 12px;border-radius:8px;background:#32283c;font-weight:650}.results{max-height:460px;overflow:auto;border:1px solid #534361;border-radius:8px;background:#16121e;padding:12px;white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.55 ui-monospace,Consolas,monospace}.important{border-left:3px solid #e2b8fb;padding-left:12px}.warn{color:#ffcf86}code{background:#34283e;padding:.15rem .3rem;border-radius:4px}footer{padding:26px 0 45px;color:#c9bdd5}select,input[type=text]{font:inherit;background:#17121e;border:1px solid #77618b;border-radius:8px;padding:9px;color:inherit;max-width:100%}label.block{display:block;margin:12px 0}fieldset{border:1px solid #51415e;border-radius:8px;margin:15px 0;padding:12px} [hidden]{display:none!important}
+</style></head><body><header class="top"><div class="wrap"><a href="./">← Back to Disgrace DB</a> · <strong>Batch Import &amp; Publish</strong></div></header><main class="wrap">
+<section style="margin:24px 0"><div class="muted">CREATOR TOOLS · BUDDYFIGHT</div><h1>Batch Publisher</h1><p class="muted">Import TXT / JSON definitions, update artwork, or replace an entire archetype.</p></section>
+<section class="panel"><h2>1. Load the currently published collection</h2><div class="row"><span id="loaded" class="stat">Loading cards.json…</span><button class="button secondary" id="reload">Reload published cards</button></div><p class="muted">Nothing is published until you commit and push the exported ZIP contents.</p><details><summary>Load a local catalog backup instead</summary><p>Use the complete current cards.json, not an archetype-only file. This is useful for offline testing.</p><input id="base-file" type="file" accept=".json,application/json"></details></section>
+<section class="panel"><h2>2. Choose an operation and files</h2><label class="block">Operation <select id="mode"><option value="merge">Add / update cards and artwork</option><option value="replace">Replace archetype</option></select></label>
+<fieldset id="replace-options" hidden><legend>Replace archetype</legend><label class="block">Existing primary collection <select id="scope"><option value="">Choose a collection</option></select></label><p class="warn">Replacement removes old records that belong to the selected primary collection. Upload the COMPLETE replacement collection, not a partial update. Other collections are preserved. Artwork files are never deleted.</p><label class="tick" id="legacy-row" hidden><input type="checkbox" id="legacy" checked><span>Also migrate verified legacy Hashveld ID/name pairs (including old Gridman-labelled records). The unrelated Nursery #7457 is protected by the name check.</span></label><label class="block">Type the selected collection name to confirm: <input id="confirm" type="text" autocomplete="off" placeholder="Collection name"></label></fieldset>
+<p>Choose card definitions and/or artwork files, e.g. <code>Hashveld.txt</code>, <code>cards.json</code>, <code>n5212.png</code>.</p><input id="files" type="file" multiple accept=".txt,.json,.png,.jpg,.jpeg,.webp,text/plain,application/json,image/png,image/jpeg,image/webp"><label class="tick" id="edit-row"><input type="checkbox" id="allow-edits"><span><strong>Allow existing card text/stat updates.</strong> Off by default. Images can be updated without this.</span></label><div class="row"><button class="button" id="review" disabled>Review selected files</button><span id="selected" class="muted">No files selected</span></div></section>
+<section class="panel"><h2>3. Review changes before exporting</h2><div class="row"><span class="stat" id="added">0 new cards</span><span class="stat" id="updated">0 text/stat updates</span><span class="stat" id="removed">0 removed cards</span><span class="stat" id="artwork">0 artwork files</span></div><p id="hint" class="muted">Review files before downloading.</p><pre id="report" class="results" aria-live="polite">No files reviewed.</pre><label id="approve-row" class="tick" hidden><input id="approve" type="checkbox"><span>I reviewed the removed and replacement records and want to export this complete catalog.</span></label><button class="button" id="export" disabled>Download publishing ZIP</button><p class="muted important"><strong>Publishing is not automatic.</strong> Extract the ZIP into your repository root, merge assets/cards, commit and push. The ZIP includes the full cards.json and cards-data.js.</p></section></main><footer class="wrap">Public repository: <a href="https://github.com/dbarnesirick-arch/disgrace-db">disgrace-db</a>. No access tokens or passwords are used here.</footer>
 <script>
 "use strict";
-const $ = id => document.getElementById(id);
-const textEncoder = new TextEncoder();
-const cardTypeMap = {flag:5,monster:1,item:2,spell:3,impact:4,"impact monster":6};
-let published = [];
-let staged = null;
-const basename = name => name.split(/[\\/]/).pop();
-const canon = v => String(v ?? "").trim();
-const normName = v => canon(v).toLowerCase().replace(/\s+/g," ");
-const validId = id => /^\d+$/.test(String(id)) && Number(id) > 0;
-const nID = id => validId(id) ? String(Number(id)) : "";
-const icon = type => type === 1 ? "Monster" : type === 2 ? "Item" : type === 3 ? "Spell" : type === 4 ? "Impact" : type === 5 ? "Flag" : type === 6 ? "Impact Monster" : "Other";
-
-async function reloadPublished(){
-  $("loaded").textContent = "Loading cards.json…";
-  $("review").disabled = true;
-  $("export").disabled = true;
-  staged = null;
-  try {
-    const resp=await fetch("./cards.json",{cache:"no-store"});
-    if(!resp.ok) throw Error("HTTP " + resp.status);
-    const data=await resp.json();
-    if(!Array.isArray(data)) throw Error("cards.json is not an array");
-    const ids=new Set();
-    for(const card of data){
-      const id=nID(card.id);
-      if(!id||ids.has(id))throw Error("Invalid or duplicate ID in published catalog: " + card.id);
-      ids.add(id);
-    }
-    published=data;
-    $("loaded").textContent=`${data.length.toLocaleString()} published cards loaded`;
-    $("review").disabled=false;
-  } catch(error) {
-    $("loaded").textContent="Cannot load the published card feed";
-    $("report").textContent="Load error: " + error.message + ". Open this tool from your hosted GitHub Pages site, not as a file:/// page.";
+const LEGACY_HASHVELD = {"7314":{"id":"5000","names":["Hashveld, the land of Dragons"]},"7315":{"id":"5001","names":["Dragon Tamer Sword, Flame Eater"]},"7316":{"id":"5002","names":["Flame Hatchling Dragon"]},"7317":{"id":"5003","names":["Fire Dragon Mentor, Veyla"]},"7318":{"id":"5004","names":["Arthor and Croxs"]},"7319":{"id":"5005","names":["Dragon Tamer, Ryn"]},"7320":{"id":"5006","names":["Maiden of Fire, Ignisara"]},"7321":{"id":"5007","names":["Ember Twins, Ignil & Pyra"]},"7322":{"id":"5008","names":["Dragon Tamer, Cinder Scribe"]},"7323":{"id":"5009","names":["Baby Ash Dragon"]},"7324":{"id":"5010","names":["Ember Tamer, Ryozu"]},"7325":{"id":"5011","names":["Lily & Scorvyrn"]},"7326":{"id":"5012","names":["Ash Dragon, Scorvyrn"]},"7327":{"id":"5013","names":["Dragon Tamer Bow, Bolt Weaver"]},"7328":{"id":"5014","names":["Dragon Tamer, Kayra"]},"7329":{"id":"5015","names":["Holliebell & Raiku"]},"7330":{"id":"5016","names":["Aeris & Volthar"]},"7331":{"id":"5017","names":["Static Hatchling, Voltiki"]},"7332":{"id":"5018","names":["Maiden of Thunder, Raelina"]},"7333":{"id":"5019","names":["Eve and the Twin Dragons"]},"7334":{"id":"5020","names":["Jax and Tempo"]},"7335":{"id":"5021","names":["Dragon Tamer, Aeri"]},"7336":{"id":"5022","names":["Storm Tyrant Dragon, Raivorn"]},"7337":{"id":"5023","names":["Sky Dragon, Nephotari"]},"7338":{"id":"5024","names":["Zyrak & Vaelion"]},"7339":{"id":"5025","names":["Sea Hatchling, Neru"]},"7340":{"id":"5026","names":["Maiden of Water, Cordelia"]},"7341":{"id":"5027","names":["Marilla & Neru"]},"7342":{"id":"5028","names":["Dragon Tamer, Elen"]},"7343":{"id":"5029","names":["Serin & Kaelmar"]},"7344":{"id":"5030","names":["River Dragon, Myrnos"]},"7345":{"id":"5031","names":["Death Typhoon Dragon, Kalyth"]},"7346":{"id":"5032","names":["Dragon Tamer Staff, Storm Chaser"]},"7347":{"id":"5033","names":["Flow Ridda, Sirenea"]},"7348":{"id":"5034","names":["Maelstrom Tyrant Dragon, Nerion"]},"7349":{"id":"5035","names":["Monarch of the sea, Aqualon"]},"7350":{"id":"5036","names":["Dragon Tamer Axe, Earth Splitter"]},"7351":{"id":"5037","names":["Old Man Nuadad"]},"7352":{"id":"5038","names":["Earth Hatchling, Pebblin"]},"7353":{"id":"5039","names":["Maiden of Earth, Thalia"]},"7354":{"id":"5040","names":["Earth Mage, Terralith"]},"7355":{"id":"5041","names":["Dryad Sisters"]},"7356":{"id":"5042","names":["Angelic Dragon Barrowwyrm"]},"7357":{"id":"5043","names":["Emma & Emerald"]},"7358":{"id":"5044","names":["Wood Dragon, Gaia"]},"7359":{"id":"5045","names":["Mountain Dragon, Domungus"]},"7360":{"id":"5046","names":["Dragonify, Fire Dragon Mode!"]},"7361":{"id":"5047","names":["Dragonify, Lightning Dragon Mode!"]},"7362":{"id":"5048","names":["Dragonify, Water Dragon Mode!"]},"7363":{"id":"5049","names":["Dragonify, Earth Dragon Mode!"]},"7364":{"id":"5050","names":["Firestorm"]},"7365":{"id":"5051","names":["Blazing Spirit"]},"7366":{"id":"5052","names":["Heatwave"]},"7367":{"id":"5053","names":["Convection"]},"7368":{"id":"5054","names":["Fire Dragon Blessing"]},"7369":{"id":"5055","names":["Mountain of Fire"]},"7370":{"id":"5056","names":["Flame Pillar"]},"7371":{"id":"5057","names":["Ashes to Ashes"]},"7372":{"id":"5058","names":["Soulflare Revival"]},"7373":{"id":"5059","names":["Combustion Chain"]},"7374":{"id":"5060","names":["Lightning Strikes Twice"]},"7375":{"id":"5061","names":["Charge"]},"7376":{"id":"5062","names":["Manokami"]},"7377":{"id":"5063","names":["Static"]},"7378":{"id":"5064","names":["Storm Reserve"]},"7379":{"id":"5065","names":["Thunder Mantel"]},"7380":{"id":"5066","names":["Storm Rebirth"]},"7381":{"id":"5067","names":["Raigeki"]},"7382":{"id":"5068","names":["Storm Aegis"]},"7383":{"id":"5069","names":["Chain Lightning"]},"7384":{"id":"5070","names":["Hurricane"]},"7385":{"id":"5071","names":["Tsunami"]},"7386":{"id":"5072","names":["Suffocating Waves"]},"7387":{"id":"5073","names":["High Tide"]},"7388":{"id":"5074","names":["Water Dragon Blessing"]},"7389":{"id":"5075","names":["Flowing Tide"]},"7390":{"id":"5076","names":["Rising waves"]},"7391":{"id":"5077","names":["Tidal Snare"]},"7392":{"id":"5078","names":["Secrets of the Deep"]},"7393":{"id":"5079","names":["Diffusion Wave"]},"7394":{"id":"5080","names":["Earthquake"]},"7395":{"id":"5081","names":["Fissure"]},"7396":{"id":"5082","names":["Tectonic Bulwark"]},"7397":{"id":"5083","names":["Giving Roots"]},"7398":{"id":"5084","names":["Earthen Oath"]},"7399":{"id":"5085","names":["Seismic Verdict"]},"7400":{"id":"5086","names":["Seismic Event"]},"7401":{"id":"5087","names":["Tremors"]},"7402":{"id":"5088","names":["Gift of Gaia"]},"7403":{"id":"5089","names":["Magnitude"]},"7404":{"id":"5090","names":["Rootbound Warden, Thalgren"]},"7405":{"id":"5091","names":["Elders of Hashveld"]},"7406":{"id":"5092","names":["Multi-Scale Hatchling, Polywyrm"]},"7407":{"id":"5093","names":["Dragonic Maiden"]},"7408":{"id":"5094","names":["Vexa"]},"7409":{"id":"5095","names":["Hashveld Musician, Reko"]},"7410":{"id":"5096","names":["Hashveld Musician, Lyren"]},"7411":{"id":"5097","names":["Pulse Dragon, Fluxis"]},"7412":{"id":"5098","names":["Raging Dragon"]},"7413":{"id":"5099","names":["Voldar"]},"7414":{"id":"5100","names":["Rainbow Dragon, Nexus"]},"7415":{"id":"5101","names":["Weapons of Hashveld"]},"7416":{"id":"5102","names":["Hashveld Ignition Rite"]},"7417":{"id":"5103","names":["Lord of the Land"]},"7418":{"id":"5104","names":["Camouflage"]},"7419":{"id":"5105","names":["Barrier"]},"7420":{"id":"5106","names":["Trickster Dragon"]},"7421":{"id":"5107","names":["Harmony"]},"7422":{"id":"5108","names":["Echoes of Hashveld"]},"7423":{"id":"5109","names":["Got You!"]},"7424":{"id":"5110","names":["Leyline Vault"]},"7425":{"id":"5111","names":["Blazing Cataclysm"]},"7426":{"id":"5112","names":["Judgment Bolt"]},"7427":{"id":"5113","names":["Abyssal Whirlpool"]},"7428":{"id":"5114","names":["Gaias Final Verdict"]},"7429":{"id":"5115","names":["Seedling of Gaia"]},"7430":{"id":"5116","names":["Poison Roots"]},"7431":{"id":"5117","names":["Quicksand"]},"7432":{"id":"5118","names":["Cauterised"]},"7433":{"id":"5119","names":["Set My Body Ablaze"]},"7434":{"id":"5120","names":["Magma Armor"]},"7435":{"id":"5121","names":["Spit Fire!"]},"7436":{"id":"5122","names":["Burn to the Bone"]},"7437":{"id":"5123","names":["Feed the Flames"]},"7446":{"id":"5124","names":["Lightning from Above"]},"7447":{"id":"5125","names":["Overcharge Conduit"]},"7448":{"id":"5126","names":["Low Tide"]},"7449":{"id":"5127","names":["Rushing Waves"]},"7450":{"id":"5128","names":["Reflective Water"]},"7451":{"id":"5129","names":["Refreshing Air"]},"7452":{"id":"5130","names":["Reflected Spectrum"]},"7453":{"id":"5131","names":["Dragon Dominance"]},"7454":{"id":"5132","names":["Protective Partner"]},"7455":{"id":"5133","names":["Rainbow River"]},"7456":{"id":"5134","names":["Adaptive Scarecrow of Hashveld"]},"7457":{"id":"5135","names":["Leviathan of the Deep Current"]},"7888":{"id":"5136","names":["Cursed Baby Dragon, Ultima"]},"7889":{"id":"5137","names":["Cursed Dragon Lord, Ultima"]},"7890":{"id":"5138","names":["Cursed Abyss Dragon, Ultima"]},"7891":{"id":"5139","names":["Cursed Dragon, Visored"]},"7892":{"id":"5140","names":["Dragon Tamer, Mavis"]},"7893":{"id":"5141","names":["Oracle Dragon"]},"7894":{"id":"5142","names":["Ray Dragon"]},"7895":{"id":"5143","names":["Saber and Blaze"]},"7896":{"id":"5144","names":["Dragonic Cursed Knight Aciair","Cursed Knight Aciair"]},"7897":{"id":"5145","names":["Nelia"]},"7898":{"id":"5146","names":["Fasha"]},"7899":{"id":"5147","names":["Dragon Curse"]},"7900":{"id":"5148","names":["Dragon Pride"]},"7901":{"id":"5149","names":["miasma"]},"7902":{"id":"5150","names":["Curse Binding"]},"7903":{"id":"5151","names":["Blight Omen"]},"7904":{"id":"5152","names":["Prism Dragon, Aetherlink"]},"7905":{"id":"5153","names":["Prismatic Archive"]},"7906":{"id":"5154","names":["Curse Reawaken"]},"7907":{"id":"5155","names":["Corrupted Insight"]},"7908":{"id":"5156","names":["Blighted Land"]},"7909":{"id":"5157","names":["Ultima Geyser"]},"7910":{"id":"5158","names":["Dragonify, Blight Dragon Mode!"]},"7911":{"id":"5159","names":["Dragon Tamer Rapier, Black Thorn"]},"7912":{"id":"5160","names":["Maiden of Curses, Nyx"]},"7913":{"id":"5161","names":["Blighted Flower"]},"7914":{"id":"5162","names":["Blight Hatchling Dragon"]},"7915":{"id":"5163","names":["Wind Hatchling Dragon"]},"7916":{"id":"5164","names":["Dragon Tamer, Teo"]},"7917":{"id":"5165","names":["Draconic Maiden, Zephyra"]},"7918":{"id":"5166","names":["Wind Mage, Patient"]},"7919":{"id":"5167","names":["Blue Dragon, Teal"]},"7920":{"id":"5168","names":["Gale Dragon, Zephyr"]},"7921":{"id":"5169","names":["Dragonic Wind Knight, Caelis","Dragonic Wind Knight"]},"7922":{"id":"5170","names":["Dragon Tamer, Horus"]},"7923":{"id":"5171","names":["Tempest Cain Bastion"]},"7924":{"id":"5172","names":["Dragon Tamer Horus & Tempest Cain Bastion"]},"7925":{"id":"5173","names":["Free Wind"]},"7926":{"id":"5174","names":["Tailwind"]},"7927":{"id":"5175","names":["Jet Stream"]},"7928":{"id":"5176","names":["Second Wind"]},"7929":{"id":"5177","names":["Core Breeze"]},"7930":{"id":"5178","names":["Hurricane"]},"7931":{"id":"5179","names":["Wind Tunnel"]},"7932":{"id":"5180","names":["Winds Grace"]},"7933":{"id":"5181","names":["Guiding Winds"]},"7934":{"id":"5182","names":["Tome of Guiding Winds"]},"7935":{"id":"5183","names":["Dragonify, Wind Dragon Mode!"]},"7936":{"id":"5184","names":["Mirage Dragon"]},"7937":{"id":"5185","names":["Fatality Dragon"]},"7938":{"id":"5186","names":["Fire Draconic Maiden"]},"7939":{"id":"5187","names":["Lightning Draconic Maiden"]},"7940":{"id":"5188","names":["Water Draconic Maiden"]},"7941":{"id":"5189","names":["Earth Draconic Maiden"]},"7942":{"id":"5190","names":["Primal Gale Dragon, Boulder Scale"]},"7943":{"id":"5191","names":["Dragonic Fire Knight, Vaelric"]},"7944":{"id":"5192","names":["Dragonic Thunder Knight, Raizen"]},"7945":{"id":"5193","names":["Dragonic Water Knight, Maelros"]},"7946":{"id":"5194","names":["Dragonic Earth Knight, Thaldrin"]},"7947":{"id":"5195","names":["Dragonic Prisma Knight, Aureon"]},"7948":{"id":"5196","names":["Ember Squire, Torren"]},"7949":{"id":"5197","names":["Tide Squire, Neris"]},"7950":{"id":"5198","names":["Thunder Squire, Kaizen"]},"7951":{"id":"5199","names":["Stone Squire, Brannoc"]},"7952":{"id":"5200","names":["Gale Squire, Sylven"]},"7953":{"id":"5201","names":["Prismatic Squire, Ilyra"]},"7954":{"id":"5202","names":["Cinder King, Vhalzar"]},"7955":{"id":"5203","names":["Inferno Queen, Pyralis"]},"7956":{"id":"5204","names":["Thunder King, Raikenzar"]},"7957":{"id":"5205","names":["Bedrock King, Terragorn"]},"7958":{"id":"5206","names":["Gaia Queen, Eirathra"]},"7959":{"id":"5207","names":["Tempest King, Aerovan"]},"7960":{"id":"5208","names":["Highwind Queen, Lyssara"]},"7961":{"id":"5209","names":["Blight King, Malveris"]},"7962":{"id":"5210","names":["Blight Queen, Morvessa"]},"7963":{"id":"5211","names":["Thunder Queen, Raivella"]},"7964":{"id":"5212","names":["Chain Reaction"]},"7965":{"id":"5213","names":["Smoldering Brand"]},"7966":{"id":"5214","names":["Burn Through the Answer"]},"7967":{"id":"5215","names":["Ashen Safeguard"]},"7968":{"id":"5216","names":["Hashveld, Realm of the Blazing Scale"]},"7969":{"id":"5217","names":["Tidal King, Nerathos"]},"7970":{"id":"5218","names":["Tide Queen, Maristella"]},"7971":{"id":"5219","names":["Flow Around the Blow"]},"7972":{"id":"5220","names":["Crashing Tide Reversal"]},"7973":{"id":"5221","names":["Abyssal Deluge"]},"7974":{"id":"5222","names":["High Tide Offensive"]},"7975":{"id":"5223","names":["Hashveld, Realm of the Endless Tide"]},"7976":{"id":"5224","names":["Ball Lightning"]},"7977":{"id":"5225","names":["Spider Lightning"]},"7978":{"id":"5226","names":["Hashveld, Realm of the Raging Storm"]},"7979":{"id":"5227","names":["Cumulonimbus"]},"7980":{"id":"5228","names":["Bedrock Edict"]},"7981":{"id":"5229","names":["Landslide Momentum"]},"7982":{"id":"5230","names":["Continental Pressure"]},"7983":{"id":"5231","names":["Deep Root Network"]},"7984":{"id":"5232","names":["Hashveld, Realm of the Ancient Earth"]},"7985":{"id":"5233","names":["Whispers of the Wind"]},"7986":{"id":"5234","names":["Dragon Tamer Vulcan"]},"7987":{"id":"5235","names":["Pressure Drop"]},"7988":{"id":"5236","names":["Carried Away"]},"7989":{"id":"5237","names":["Changing Winds"]},"7990":{"id":"5238","names":["Dragon Tamer Sirocco"]},"7991":{"id":"5239","names":["Derecho - The Returning Tempest"]},"7992":{"id":"5240","names":["Slipstream"]},"7993":{"id":"5241","names":["Scatter Winds"]},"7994":{"id":"5242","names":["Hashveld, Realm of the Endless Gale"]},"7995":{"id":"5243","names":["Blight Squire, Vesper"]},"7996":{"id":"5244","names":["Loving Partner"]},"7997":{"id":"5245","names":["Curse Consumption"]},"7998":{"id":"5246","names":["The Curse Lives On"]},"7999":{"id":"5247","names":["Cursed Ravager, Varkesh"]},"8000":{"id":"5248","names":["Plague in Full Bloom"]},"8001":{"id":"5249","names":["Hashveld, Realm of the Living Curse"]}};
+const CANONICAL_HASHVELD = {"5000":["Hashveld, the land of Dragons"],"5001":["Dragon Tamer Sword, Flame Eater"],"5002":["Flame Hatchling Dragon"],"5003":["Fire Dragon Mentor, Veyla"],"5004":["Arthor and Croxs"],"5005":["Dragon Tamer, Ryn"],"5006":["Maiden of Fire, Ignisara"],"5007":["Ember Twins, Ignil & Pyra"],"5008":["Dragon Tamer, Cinder Scribe"],"5009":["Baby Ash Dragon"],"5010":["Ember Tamer, Ryozu"],"5011":["Lily & Scorvyrn"],"5012":["Ash Dragon, Scorvyrn"],"5013":["Dragon Tamer Bow, Bolt Weaver"],"5014":["Dragon Tamer, Kayra"],"5015":["Holliebell & Raiku"],"5016":["Aeris & Volthar"],"5017":["Static Hatchling, Voltiki"],"5018":["Maiden of Thunder, Raelina"],"5019":["Eve and the Twin Dragons"],"5020":["Jax and Tempo"],"5021":["Dragon Tamer, Aeri"],"5022":["Storm Tyrant Dragon, Raivorn"],"5023":["Sky Dragon, Nephotari"],"5024":["Zyrak & Vaelion"],"5025":["Sea Hatchling, Neru"],"5026":["Maiden of Water, Cordelia"],"5027":["Marilla & Neru"],"5028":["Dragon Tamer, Elen"],"5029":["Serin & Kaelmar"],"5030":["River Dragon, Myrnos"],"5031":["Death Typhoon Dragon, Kalyth"],"5032":["Dragon Tamer Staff, Storm Chaser"],"5033":["Flow Ridda, Sirenea"],"5034":["Maelstrom Tyrant Dragon, Nerion"],"5035":["Monarch of the sea, Aqualon"],"5036":["Dragon Tamer Axe, Earth Splitter"],"5037":["Old Man Nuadad"],"5038":["Earth Hatchling, Pebblin"],"5039":["Maiden of Earth, Thalia"],"5040":["Earth Mage, Terralith"],"5041":["Dryad Sisters"],"5042":["Angelic Dragon Barrowwyrm"],"5043":["Emma & Emerald"],"5044":["Wood Dragon, Gaia"],"5045":["Mountain Dragon, Domungus"],"5046":["Dragonify, Fire Dragon Mode!"],"5047":["Dragonify, Lightning Dragon Mode!"],"5048":["Dragonify, Water Dragon Mode!"],"5049":["Dragonify, Earth Dragon Mode!"],"5050":["Firestorm"],"5051":["Blazing Spirit"],"5052":["Heatwave"],"5053":["Convection"],"5054":["Fire Dragon Blessing"],"5055":["Mountain of Fire"],"5056":["Flame Pillar"],"5057":["Ashes to Ashes"],"5058":["Soulflare Revival"],"5059":["Combustion Chain"],"5060":["Lightning Strikes Twice"],"5061":["Charge"],"5062":["Manokami"],"5063":["Static"],"5064":["Storm Reserve"],"5065":["Thunder Mantel"],"5066":["Storm Rebirth"],"5067":["Raigeki"],"5068":["Storm Aegis"],"5069":["Chain Lightning"],"5070":["Hurricane"],"5071":["Tsunami"],"5072":["Suffocating Waves"],"5073":["High Tide"],"5074":["Water Dragon Blessing"],"5075":["Flowing Tide"],"5076":["Rising waves"],"5077":["Tidal Snare"],"5078":["Secrets of the Deep"],"5079":["Diffusion Wave"],"5080":["Earthquake"],"5081":["Fissure"],"5082":["Tectonic Bulwark"],"5083":["Giving Roots"],"5084":["Earthen Oath"],"5085":["Seismic Verdict"],"5086":["Seismic Event"],"5087":["Tremors"],"5088":["Gift of Gaia"],"5089":["Magnitude"],"5090":["Rootbound Warden, Thalgren"],"5091":["Elders of Hashveld"],"5092":["Multi-Scale Hatchling, Polywyrm"],"5093":["Dragonic Maiden"],"5094":["Vexa"],"5095":["Hashveld Musician, Reko"],"5096":["Hashveld Musician, Lyren"],"5097":["Pulse Dragon, Fluxis"],"5098":["Raging Dragon"],"5099":["Voldar"],"5100":["Rainbow Dragon, Nexus"],"5101":["Weapons of Hashveld"],"5102":["Hashveld Ignition Rite"],"5103":["Lord of the Land"],"5104":["Camouflage"],"5105":["Barrier"],"5106":["Trickster Dragon"],"5107":["Harmony"],"5108":["Echoes of Hashveld"],"5109":["Got You!"],"5110":["Leyline Vault"],"5111":["Blazing Cataclysm"],"5112":["Judgment Bolt"],"5113":["Abyssal Whirlpool"],"5114":["Gaias Final Verdict"],"5115":["Seedling of Gaia"],"5116":["Poison Roots"],"5117":["Quicksand"],"5118":["Cauterised"],"5119":["Set My Body Ablaze"],"5120":["Magma Armor"],"5121":["Spit Fire!"],"5122":["Burn to the Bone"],"5123":["Feed the Flames"],"5124":["Lightning from Above"],"5125":["Overcharge Conduit"],"5126":["Low Tide"],"5127":["Rushing Waves"],"5128":["Reflective Water"],"5129":["Refreshing Air"],"5130":["Reflected Spectrum"],"5131":["Dragon Dominance"],"5132":["Protective Partner"],"5133":["Rainbow River"],"5134":["Adaptive Scarecrow of Hashveld"],"5135":["Leviathan of the Deep Current"],"5136":["Cursed Baby Dragon, Ultima"],"5137":["Cursed Dragon Lord, Ultima"],"5138":["Cursed Abyss Dragon, Ultima"],"5139":["Cursed Dragon, Visored"],"5140":["Dragon Tamer, Mavis"],"5141":["Oracle Dragon"],"5142":["Ray Dragon"],"5143":["Saber and Blaze"],"5144":["Dragonic Cursed Knight Aciair"],"5145":["Nelia"],"5146":["Fasha"],"5147":["Dragon Curse"],"5148":["Dragon Pride"],"5149":["miasma"],"5150":["Curse Binding"],"5151":["Blight Omen"],"5152":["Prism Dragon, Aetherlink"],"5153":["Prismatic Archive"],"5154":["Curse Reawaken"],"5155":["Corrupted Insight"],"5156":["Blighted Land"],"5157":["Ultima Geyser"],"5158":["Dragonify, Blight Dragon Mode!"],"5159":["Dragon Tamer Rapier, Black Thorn"],"5160":["Maiden of Curses, Nyx"],"5161":["Blighted Flower"],"5162":["Blight Hatchling Dragon"],"5163":["Wind Hatchling Dragon"],"5164":["Dragon Tamer, Teo"],"5165":["Draconic Maiden, Zephyra"],"5166":["Wind Mage, Patient"],"5167":["Blue Dragon, Teal"],"5168":["Gale Dragon, Zephyr"],"5169":["Dragonic Wind Knight, Caelis"],"5170":["Dragon Tamer, Horus"],"5171":["Tempest Cain Bastion"],"5172":["Dragon Tamer Horus & Tempest Cain Bastion"],"5173":["Free Wind"],"5174":["Tailwind"],"5175":["Jet Stream"],"5176":["Second Wind"],"5177":["Core Breeze"],"5178":["Hurricane"],"5179":["Wind Tunnel"],"5180":["Winds Grace"],"5181":["Guiding Winds"],"5182":["Tome of Guiding Winds"],"5183":["Dragonify, Wind Dragon Mode!"],"5184":["Mirage Dragon"],"5185":["Fatality Dragon"],"5186":["Fire Draconic Maiden"],"5187":["Lightning Draconic Maiden"],"5188":["Water Draconic Maiden"],"5189":["Earth Draconic Maiden"],"5190":["Primal Gale Dragon, Boulder Scale"],"5191":["Dragonic Fire Knight, Vaelric"],"5192":["Dragonic Thunder Knight, Raizen"],"5193":["Dragonic Water Knight, Maelros"],"5194":["Dragonic Earth Knight, Thaldrin"],"5195":["Dragonic Prisma Knight, Aureon"],"5196":["Ember Squire, Torren"],"5197":["Tide Squire, Neris"],"5198":["Thunder Squire, Kaizen"],"5199":["Stone Squire, Brannoc"],"5200":["Gale Squire, Sylven"],"5201":["Prismatic Squire, Ilyra"],"5202":["Cinder King, Vhalzar"],"5203":["Inferno Queen, Pyralis"],"5204":["Thunder King, Raikenzar"],"5205":["Bedrock King, Terragorn"],"5206":["Gaia Queen, Eirathra"],"5207":["Tempest King, Aerovan"],"5208":["Highwind Queen, Lyssara"],"5209":["Blight King, Malveris"],"5210":["Blight Queen, Morvessa"],"5211":["Thunder Queen, Raivella"],"5212":["Chain Reaction"],"5213":["Smoldering Brand"],"5214":["Burn Through the Answer"],"5215":["Ashen Safeguard"],"5216":["Hashveld, Realm of the Blazing Scale"],"5217":["Tidal King, Nerathos"],"5218":["Tide Queen, Maristella"],"5219":["Flow Around the Blow"],"5220":["Crashing Tide Reversal"],"5221":["Abyssal Deluge"],"5222":["High Tide Offensive"],"5223":["Hashveld, Realm of the Endless Tide"],"5224":["Ball Lightning"],"5225":["Spider Lightning"],"5226":["Hashveld, Realm of the Raging Storm"],"5227":["Cumulonimbus"],"5228":["Bedrock Edict"],"5229":["Landslide Momentum"],"5230":["Continental Pressure"],"5231":["Deep Root Network"],"5232":["Hashveld, Realm of the Ancient Earth"],"5233":["Whispers of the Wind"],"5234":["Dragon Tamer Vulcan"],"5235":["Pressure Drop"],"5236":["Carried Away"],"5237":["Changing Winds"],"5238":["Dragon Tamer Sirocco"],"5239":["Derecho - The Returning Tempest"],"5240":["Slipstream"],"5241":["Scatter Winds"],"5242":["Hashveld, Realm of the Endless Gale"],"5243":["Blight Squire, Vesper"],"5244":["Loving Partner"],"5245":["Curse Consumption"],"5246":["The Curse Lives On"],"5247":["Cursed Ravager, Varkesh"],"5248":["Plague in Full Bloom"],"5249":["Hashveld, Realm of the Living Curse"]};
+const canon=v=>String(v??'').trim();
+const norm=v=>canon(v).toLowerCase().replace(/\s+/g,' ');
+const nID=v=>/^\d+$/.test(canon(v))&&Number.isSafeInteger(Number(v))&&Number(v)>0?String(Number(v)):'';
+const primary=c=>canon(c.collection)||canon(c.collections?.[0]);
+const typeMap={flag:5,monster:1,item:2,spell:3,impact:4,'impact monster':6};
+const basename=name=>name.split(/[\\/]/).pop();
+const knownLegacy=c=>{const m=LEGACY_HASHVELD[nID(c.id)];return !!m&&m.names.some(x=>norm(x)===norm(c.name));};
+const knownCanonical=c=>CANONICAL_HASHVELD[nID(c.id)]?.some(n=>norm(n)===norm(c.name))===true;
+const sameName=(a,b)=>norm(a.name)===norm(b.name);
+function validateCatalog(cards){if(!Array.isArray(cards)||!cards.length)throw Error('Expected a nonempty cards array.');const seen=new Set();for(const c of cards){const id=nID(c?.id);if(!id||seen.has(id)||!canon(c.name))throw Error('Invalid or duplicate ID/name: '+c?.id);seen.add(id);}return cards;}
+function parseJson(raw){const doc=JSON.parse(raw);const arr=Array.isArray(doc)?doc:doc?.cards;if(!Array.isArray(arr))throw Error('JSON must be an array or {cards:[...]}.');return arr.map(input=>{if(!input||typeof input!=='object')throw Error('Invalid record.');const c=structuredClone(input);c.id=nID(c.id);const t=c.card_type??c.type;c.type=typeof t==='number'?t:/^\d+$/.test(String(t))?Number(t):typeMap[norm(t)]??0;c.name=canon(c.name);c.effect=canon(c.effect??c.description);c.collections=Array.isArray(c.collections)?c.collections:[canon(c.collection||'Custom')];c.attributes=Array.isArray(c.attributes)?c.attributes:[];if(typeof c.image==='string'&&c.image.startsWith('data:'))delete c.image;return c;});}
+function parseGml(raw,filename){const records=[];const blockRe=/^CardStat\s*=\s*(\d+)\s*\r?\n\s*\{\s*\r?\n([\s\S]*?)^\s*\}\s*$/gm;for(const match of raw.matchAll(blockRe)){const fields={};const body=match[2];const heads=Array.from(body.matchAll(/^global\.Card(\w+)\[CardStat\]\s*=\s*/gm));for(let i=0;i<heads.length;i++){let v=body.slice(heads[i].index+heads[i][0].length,i+1<heads.length?heads[i+1].index:body.length).trim();if(v.startsWith('"')&&v.endsWith('"'))v=v.slice(1,-1).replace(/"\s*\+\s*chr\(34\)\s*\+\s*"/gi,'"');else if(/^-?\d+$/.test(v))v=Number(v);fields[heads[i][1]]=v;}const tags=(canon(fields.Text).split(/\r?\n/).map(x=>x.trim()).filter(Boolean).at(-1)||'');const a=tags.includes('/')?tags.split('/').map(x=>x.trim()).filter(Boolean):[];const collection=a[0]||filename.replace(/\.[^.]+$/,'')||'Custom';const c={id:nID(match[1]),name:canon(fields.Name),type:Number(fields.Type??0),world:fields.World??'',effect:canon(fields.Text),flavor:canon(fields.Flavor),collection,collections:[collection],attributes:a.slice(1)};for(const [f,t] of [['Size','size'],['Power','power'],['Defense','defense'],['Crit','critical']])if(fields[f]!==undefined&&fields[f]!=='')c[t]=Number(fields[f]);records.push(c);}return records;}
+function validDefinition(c){return !!nID(c.id)&&!!canon(c.name)&&Number.isInteger(c.type)&&c.type>=1&&c.type<=6&&['size','power','defense','critical'].every(k=>c[k]===undefined||Number.isFinite(Number(c[k])));}
+function sameDefinition(a,b){return ['name','type','world','effect','flavor','size','power','defense','critical','collection','collections','attributes'].every(k=>JSON.stringify(a[k]??null)===JSON.stringify(b[k]??null));}
+function planCatalog(base,inputs,mode,scope,includeLegacy,allowEdits){
+  validateCatalog(base);const source=new Map();for(const raw of inputs){const c=structuredClone(raw);if(!validDefinition(c))throw Error('Invalid uploaded card #'+c.id+' '+c.name);c.id=nID(c.id);if(source.has(c.id)){if(!sameDefinition(source.get(c.id),c))throw Error('Conflicting uploaded definitions for #'+c.id);continue;}source.set(c.id,c);}
+  const replacement=mode==='replace';const isHash=norm(scope)==='hashveld';const eligible=c=>norm(primary(c))===norm(scope)||(isHash&&includeLegacy&&(knownLegacy(c)||knownCanonical(c)));
+  if(replacement&&(!scope||!source.size))throw Error('Select a collection and upload its complete replacement definitions.');
+  const old=replacement?base.filter(eligible):[];if(replacement&&!old.length)throw Error('No existing records match the replacement scope.');
+  const retained=replacement?base.filter(c=>!eligible(c)):base;const next=retained.map(c=>structuredClone(c));const index=new Map(next.map((c,i)=>[nID(c.id),i]));const oldById=new Map(old.map(c=>[nID(c.id),c]));const added=[],changed=[],removed=[],conflicts=[];const originalIds=new Set(base.map(c=>nID(c.id)));
+  for(const [id,input] of source){
+    if(replacement){
+      // Require exact primary collection, or an explicitly labelled Hashveld member with a known canonical ID/name.
+      const canonicalLegacy=isHash&&knownCanonical(input);
+      if(norm(primary(input))!==norm(scope)&&!canonicalLegacy)throw Error(`Uploaded #${id} ${input.name} is not in primary collection "${scope}". Export blocked.`);
+      if(isHash&&includeLegacy&&knownLegacy(input))throw Error(`Uploaded #${id} still uses a legacy Hashveld ID. Use the renumbered definitions.`);
+      if(index.has(id))throw Error(`ID #${id} is used by retained card ${next[index.get(id)].name}. Export blocked.`);
+      const c={...input,id,collection:scope,collections:[scope,...(input.collections||[]).filter(x=>norm(x)!==norm(scope)&&(!isHash||norm(x)!=='gridman'))]};
+      if(!c.image){const exact=oldById.get(id);if(exact&&(sameName(exact,c)||(isHash&&knownCanonical(exact)&&knownCanonical(c)))&&exact.image)c.image=exact.image;else {const mapped=old.filter(x=>isHash&&includeLegacy&&knownLegacy(x)&&LEGACY_HASHVELD[nID(x.id)].id===id&&x.image);const named=old.filter(x=>sameName(x,c)&&x.image);const matches=isHash&&knownCanonical(c)?mapped:(named.length===1&&[...source.values()].filter(x=>sameName(x,c)).length===1?named:[]);if(matches.length===1)c.image=matches[0].image;}}
+      index.set(id,next.length);next.push(c);(originalIds.has(id)?changed:added).push(id);
+    }else if(index.has(id)){
+      const existing=next[index.get(id)];if(!sameName(existing,input)){conflicts.push(`#${id}: published "${existing.name}" vs uploaded "${input.name}"`);continue;}
+      if(allowEdits){const c={...existing,...input,id,image:existing.image??input.image,collections:input.collections?.length?input.collections:existing.collections,attributes:input.attributes?.length?input.attributes:existing.attributes};if(!sameDefinition(existing,c)){next[index.get(id)]=c;changed.push(id);}}
+    }else{index.set(id,next.length);next.push({...input,id});added.push(id);}
   }
+  if(replacement)for(const c of old)if(!source.has(nID(c.id)))removed.push(c);
+  validateCatalog(next);return {next,index,added,changed,removed,conflicts,old,retained:retained.length};
 }
-
-function parseGml(raw, filename){
-  const records=[];
-  const blockRe=/^CardStat\s*=\s*(\d+)\s*\r?\n\s*\{\s*\r?\n([\s\S]*?)^\s*\}\s*$/gm;
-  for(const match of raw.matchAll(blockRe)){
-    const id=nID(match[1]); const body=match[2];
-    const fieldRe=/^global\.Card(\w+)\[CardStat\]\s*=\s*/gm;
-    const fields={}; const heads=Array.from(body.matchAll(fieldRe));
-    for(let i=0;i<heads.length;i++){
-      const field=heads[i][1];
-      let value=body.slice(heads[i].index+heads[i][0].length,i+1<heads.length?heads[i+1].index:body.length).trim();
-      if(value.startsWith('"')&&value.endsWith('"')){
-        value=value.slice(1,-1).replace(/"\s*\+\s*chr\(34\)\s*\+\s*"/gi,'"');
-      } else if (/^-?\d+$/.test(value)) value=Number(value);
-      fields[field]=value;
-    }
-    if(!id||!canon(fields.Name)) continue;
-    const lastLine=canon(fields.Text).split(/\r?\n/).map(x=>x.trim()).filter(Boolean).at(-1) ?? "";
-    const tags=lastLine.includes("/")?lastLine.split("/").map(x=>x.trim()).filter(Boolean):[];
-    const collection=tags[0] || filename.replace(/\.[^.]+$/,"") || "Custom";
-    const card={id,name:canon(fields.Name),type:Number(fields.Type??0),world:fields.World??"",effect:canon(fields.Text),flavor:canon(fields.Flavor),collection,collections:[collection],attributes:tags.slice(1)};
-    for(const [from,to] of [["Size","size"],["Power","power"],["Defense","defense"],["Crit","critical"]]){
-      if(fields[from]!==undefined && fields[from]!=="") card[to]=Number(fields[from]);
-    }
-    records.push(card);
-  }
-  return records;
-}
-
-function parseJson(raw){
-  const doc=JSON.parse(raw);
-  const arr=Array.isArray(doc)?doc:(doc && Array.isArray(doc.cards) ? doc.cards : null);
-  if(!arr) throw Error("JSON must be an array or {cards:[...]}.");
-  return arr.map(input=>{
-    if(!input||typeof input!=="object")return null;
-    const card=structuredClone(input);
-    card.id=nID(card.id);
-    const t=card.card_type??card.type;
-    card.type=typeof t==='number'?t:(/^\d+$/.test(String(t))?Number(t):cardTypeMap[String(t).toLowerCase()]??0);
-    card.effect=canon(card.effect??card.description);
-    card.name=canon(card.name);
-    card.collections=Array.isArray(card.collections)?card.collections:[canon(card.collection||'Custom')];
-    card.attributes=Array.isArray(card.attributes)?card.attributes:[];
-    // Only a matching uploaded image should create a new shared image URL.
-    if(typeof card.image==='string'&&card.image.startsWith('data:'))delete card.image;
-    return card;
-  }).filter(Boolean);
-}
-
-function imageId(filename){
-  const file=basename(filename);
-  const found=/^(?:n|card[_-]?|image[_-]?)?(\d+)(?:[-_].*)?\.(png|jpe?g|webp)$/i.exec(file);
-  return found?nID(found[1]):"";
-}
-
-async function hashBytes(bytes){
-  const digest=new Uint8Array(await crypto.subtle.digest("SHA-256",bytes));
-  return Array.from(digest.slice(0,6),x=>x.toString(16).padStart(2,'0')).join('');
-}
-function arraysEqual(a,b){return JSON.stringify(a)===JSON.stringify(b);}
-function sameDefinition(a,b){
-  return ['name','type','world','effect','flavor','size','power','defense','critical'].every(k=>canon(a[k])===canon(b[k]));
-}
-
-async function review(){
-  const inputs=Array.from($("files").files);
-  $("export").disabled=true;
-  staged=null;
-  if(!inputs.length){$("report").textContent="Select files first.";return;}
-  const lines=[];const proposed=new Map();const media=new Map();const originals=new Map(published.map(c=>[nID(c.id),c]));
-  let skipped=0;
-  for(const file of inputs){
-    const name=basename(file.name); const extension=name.split('.').at(-1).toLowerCase();
-    if(['png','jpg','jpeg','webp'].includes(extension)){
-      const id=imageId(name);
-      if(!id){lines.push(`SKIP image ${name}: file name must contain a numeric card ID, e.g. n7944.png`);skipped++;continue;}
-      if(file.size>12*1024*1024){lines.push(`SKIP image ${name}: over 12 MB`);skipped++;continue;}
-      if(media.has(id)){lines.push(`SKIP image ${name}: two images for card #${id} in one batch`);skipped++;continue;}
-      media.set(id,file);
-      continue;
-    }
-    if(!['txt','json'].includes(extension)){lines.push('SKIP unsupported file: '+name);skipped++;continue;}
-    if(file.size>8*1024*1024){lines.push('SKIP too-large card file: '+name);skipped++;continue;}
-    try{
-      const contents=await file.text();
-      const entries=extension==='json'||contents.trimStart().startsWith('[')||contents.trimStart().startsWith('{')?parseJson(contents):parseGml(contents,name);
-      if(!entries.length){lines.push(`No cards found in ${name}; expected CardStat records or JSON cards array`);skipped++;continue;}
-      lines.push(`${name}: read ${entries.length} card records`);
-      for(const card of entries){
-        const id=nID(card.id);
-        if(!id||!card.name||!Number.isInteger(Number(card.type))||Number(card.type)<1||Number(card.type)>6){
-          lines.push(`  SKIP invalid card: #${card.id} ${card.name||''}`);skipped++;continue;
-        }
-        if(proposed.has(id)){
-          if(!sameDefinition(proposed.get(id),card))lines.push(`  CONFLICT: two different TXT/JSON definitions for #${id}; first wins`);
-          continue;
-        }
-        proposed.set(id,card);
-      }
-    }catch(e){lines.push(`ERROR parsing ${name}: ${e.message}`);skipped++;}
-  }
-  const next=published.map(card=>structuredClone(card));
-  const index=new Map(next.map((c,i)=>[nID(c.id),i]));
-  const newCards=[];const updatedCards=[];const conflicts=[];
-  for(const [id,input] of proposed){
-    if(index.has(id)){
-      const existing=next[index.get(id)];
-      if(normName(existing.name)!==normName(input.name)){
-        conflicts.push(`#${id}: published "${existing.name}" vs uploaded "${input.name}"`);
-        lines.push(`BLOCKED ID/name conflict #${id}: ${input.name}`);continue;
-      }
-      if($("allow-edits").checked){
-        // Keep published collection metadata/art unless explicitly provided.
-        const patched={...existing,...input,image:existing.image??input.image,collections:input.collections?.length?input.collections:existing.collections,attributes:input.attributes?.length?input.attributes:existing.attributes};
-        if(!sameDefinition(existing,patched)){
-          next[index.get(id)]=patched;updatedCards.push(id);
-        }
-      }
-    }else{
-      const entry={...input,id};
-      if(!Array.isArray(entry.collections)||!entry.collections.length)entry.collections=['Custom'];
-      if(!Array.isArray(entry.attributes))entry.attributes=[];
-      index.set(id,next.length);next.push(entry);newCards.push(id);
-    }
-  }
-  const assets=[];const artIds=[];
-  for(const [id,file] of media){
-    if(!index.has(id)){
-      lines.push(`SKIP ${file.name}: card #${id} is not in published data or this batch. Include its TXT too.`);skipped++;continue;
-    }
-    if(conflicts.some(x=>x.startsWith('#'+id+':'))){lines.push(`SKIP ${file.name}: card ID conflict`);skipped++;continue;}
-    const bytes=new Uint8Array(await file.arrayBuffer());
-    const sig=bytes.slice(0,12);
-    const validPng=bytes.length>=8&&sig[0]===137&&sig[1]===80&&sig[2]===78&&sig[3]===71;
-    const validJpg=bytes.length>=3&&sig[0]===0xff&&sig[1]===0xd8&&sig[2]===0xff;
-    const validWebp=bytes.length>=12&&String.fromCharCode(...sig.slice(0,4))==='RIFF'&&String.fromCharCode(...sig.slice(8,12))==='WEBP';
-    const ext=file.name.toLowerCase().split('.').at(-1);
-    if(!((ext==='png'&&validPng)||(ext==='webp'&&validWebp)||(['jpg','jpeg'].includes(ext)&&validJpg))){
-      lines.push(`SKIP ${file.name}: extension doesn't match image format`);skipped++;continue;
-    }
-    const sha=await hashBytes(bytes);
-    const path=`assets/cards/n${id}-${sha}.${ext==='jpeg'?'jpg':ext}`;
-    const card=next[index.get(id)];
-    if(card.image===path){lines.push(`UNCHANGED image #${id}: ${file.name}`);continue;}
-    card.image=path;
-    assets.push({path,bytes});artIds.push(id);
-  }
-  if(newCards.length) lines.push('NEW: '+newCards.map(x=>'#'+x).join(', '));
-  if(updatedCards.length)lines.push('TEXT/STATS UPDATED: '+updatedCards.map(x=>'#'+x).join(', '));
-  if(artIds.length)lines.push('NEW/REPLACED ART: '+artIds.map(x=>'#'+x).join(', '));
-  if(conflicts.length)lines.push('BLOCKED NAME/ID CONFLICTS: '+conflicts.join('; '));
-  lines.push(`REVIEW SUMMARY: ${newCards.length} new cards, ${updatedCards.length} card text/stat updates, ${assets.length} artwork files; ${skipped} skipped files/records.`);
-  if(!newCards.length&&!updatedCards.length&&!assets.length)lines.push('Nothing to export. No cards were changed.');
-  $("added").textContent=`${newCards.length} new cards`;
-  $("updated").textContent=`${updatedCards.length} text/stat changes`;
-  $("artwork").textContent=`${assets.length} artwork files`;
-  $("report").textContent=lines.join('\n');
-  staged={cards:next,assets,added:newCards,changed:updatedCards,artIds,skipped};
-  $("export").disabled=!(newCards.length||updatedCards.length||assets.length);
-}
-
-// Tiny dependency-free ZIP writer (ZIP STORE, standard UTF-8 filenames).
-const crcTable=Uint32Array.from({length:256},(_,n)=>{let c=n;for(let i=0;i<8;i++)c=c&1?(0xEDB88320^(c>>>1)):(c>>>1);return c>>>0;});
-function crc32(bytes){let crc=0xFFFFFFFF;for(const x of bytes)crc=crcTable[(crc^x)&255]^(crc>>>8);return(crc^0xFFFFFFFF)>>>0;}
-function concat(parts){let size=parts.reduce((n,x)=>n+x.length,0);const out=new Uint8Array(size);let p=0;for(const part of parts){out.set(part,p);p+=part.length;}return out;}
-function zipFiles(entries){
-  const local=[];const central=[];let off=0;
-  for(const [filename,data] of entries){
-    const name=textEncoder.encode(filename);const bytes=typeof data==='string'?textEncoder.encode(data):data;
-    const crc=crc32(bytes);const size=bytes.length;
-    const lh=new Uint8Array(30+name.length);const l=new DataView(lh.buffer);
-    l.setUint32(0,0x04034b50,true);l.setUint16(4,20,true);l.setUint16(6,0x0800,true);l.setUint16(8,0,true);
-    l.setUint32(14,crc,true);l.setUint32(18,size,true);l.setUint32(22,size,true);l.setUint16(26,name.length,true);lh.set(name,30);
-    local.push(lh,bytes);
-    const ch=new Uint8Array(46+name.length);const c=new DataView(ch.buffer);
-    c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);
-    c.setUint32(16,crc,true);c.setUint32(20,size,true);c.setUint32(24,size,true);c.setUint16(28,name.length,true);
-    c.setUint32(42,off,true);ch.set(name,46);central.push(ch);
-    off+=lh.length+size;
-  }
-  const dir=concat(central);const tail=new Uint8Array(22);const v=new DataView(tail.buffer);
-  v.setUint32(0,0x06054b50,true);v.setUint16(8,entries.length,true);v.setUint16(10,entries.length,true);
-  v.setUint32(12,dir.length,true);v.setUint32(16,off,true);
-  return new Blob([...local,dir,tail],{type:'application/zip'});
-}
-async function exportChanges(){
-  if(!staged)return;
-  $("export").disabled=true;
-  try {
-    const next=staged.cards;
-    const json=JSON.stringify(next,null,2)+'\n';
-    const js='/* Published catalog for Disgrace DB. Generated by Batch Publisher. */\nwindow.catalog = '+JSON.stringify(next)+';\n';
-    const touched=new Set([...staged.added,...staged.changed,...staged.artIds]);
-    const importCards=next.filter(c=>touched.has(nID(c.id)));
-    const readme='DISGRACE DB BATCH EXPORT\n\n1. Open the local disgrace-db repository folder using GitHub Desktop > Repository > Show in Explorer.\n2. Extract this ZIP. Copy cards.json and cards-data.js into repository root.\n3. Merge assets/cards into the existing assets/cards folder; NEVER delete older images.\n4. Commit and Push origin in GitHub Desktop.\n5. Website reads cards-data.js; Godot reads cards.json after its next sync.\n6. legacy_import.json is optional for older manual JSON import (new card records only; existing duplicates are skipped by old importers).\nThis ZIP does NOT publish anything by itself.\n';
-    const entries=[['cards.json',json],['cards-data.js',js],['legacy_import.json',JSON.stringify(importCards,null,2)+'\n'],['README_IMPORT.txt',readme],...staged.assets.map(x=>[x.path,x.bytes])];
-    const blob=zipFiles(entries);
-    const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download='Disgrace_DB_Card_Update.zip';document.body.append(link);link.click();
-    setTimeout(()=>{URL.revokeObjectURL(link.href);link.remove();},5000);
-    $("hint").textContent=`Exported ${entries.length} files. Nothing is online until you commit and push the ZIP contents.`;
-  }catch(e){$("report").textContent+='\nEXPORT ERROR: '+e.message;}
-  finally{$("export").disabled=false;}
-}
-$("reload").addEventListener('click',reloadPublished);
-$("review").addEventListener('click',review);
-$("export").addEventListener('click',exportChanges);
-$("files").addEventListener('change',()=>{$("selected").textContent=`${$("files").files.length} file(s) selected`;$("export").disabled=true;staged=null;});
-$("allow-edits").addEventListener('change',()=>{$("export").disabled=true;staged=null;$("hint").textContent='Review the selected files again after changing this option.';});
-reloadPublished();
-</script>
-</body>
-</html>
+function imageId(name){const m=/^(?:n|card[_-]?|image[_-]?)?(\d+)(?:[-_].*)?\.(png|jpe?g|webp)$/i.exec(basename(name));return m?nID(m[1]):'';}
+async function hashBytes(bytes){const digest=new Uint8Array(await crypto.subtle.digest('SHA-256',bytes));return Array.from(digest.slice(0,6),x=>x.toString(16).padStart(2,'0')).join('');}
+function imageValid(bytes,ext){return (ext==='png'&&bytes.length>=8&&[137,80,78,71,13,10,26,10].every((x,i)=>bytes[i]===x))||(['jpg','jpeg'].includes(ext)&&bytes[0]===255&&bytes[1]===216&&bytes[2]===255)||(ext==='webp'&&bytes.length>=12&&String.fromCharCode(...bytes.slice(0,4))==='RIFF'&&String.fromCharCode(...bytes.slice(8,12))==='WEBP');}
+// CORE_END
+const $=id=>document.getElementById(id);let published=[],staged=null,revision=0,busy=false;
+function invalidate(){revision++;staged=null;$('export').disabled=true;$('approve').checked=false;$('approve-row').hidden=true;$('hint').textContent='Review again before exporting.';for(const [id,text] of [['added','0 new cards'],['updated','0 text/stat updates'],['removed','0 removed cards'],['artwork','0 artwork files']])$(id).textContent=text;}
+function controls(){const replace=$('mode').value==='replace';$('replace-options').hidden=!replace;$('edit-row').hidden=replace;$('legacy-row').hidden=norm($('scope').value)!=='hashveld';$('review').disabled=busy||!published.length;$('reload').disabled=busy;$('base-file').disabled=busy;}
+function useBase(data,label){validateCatalog(data);published=data;const old=$('scope').value;$('scope').replaceChildren(new Option('Choose a collection',''));const scopes=[...new Set(data.map(primary).filter(Boolean))].sort((a,b)=>a.localeCompare(b));for(const s of scopes)$('scope').append(new Option(s,s));if(scopes.includes(old))$('scope').value=old;$('loaded').textContent=`${data.length.toLocaleString()} ${label} cards loaded`;invalidate();$('report').textContent='Catalog loaded. Choose operation and files.';}
+async function loadBase(file){if(busy)return;busy=true;published=[];invalidate();controls();try{let data;if(file)data=JSON.parse(await file.text());else{const r=await fetch('./cards.json',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);data=await r.json();}useBase(data,file?'local backup':'published');}catch(e){$('loaded').textContent='Cannot load catalog';$('report').textContent='Load error: '+e.message+'. Open from GitHub Pages or select a complete local backup.';}finally{busy=false;controls();}}
+async function review(){if(busy||!published.length)return;invalidate();const token=revision;busy=true;controls();const lines=[];try{const inputs=Array.from($('files').files),mode=$('mode').value,scope=$('scope').value,legacy=$('legacy').checked,allow=$('allow-edits').checked;if(!inputs.length)throw Error('Select files first.');if(mode==='replace'&&norm($('confirm').value)!==norm(scope))throw Error('Type the selected collection name to confirm.');const defs=[],media=new Map();let skipped=0;for(const f of inputs){const ext=f.name.split('.').at(-1).toLowerCase();if(['png','jpg','jpeg','webp'].includes(ext)){const id=imageId(f.name);if(!id||f.size>12*1024*1024||media.has(id)){lines.push('SKIP artwork: '+f.name+' (invalid ID, size, or duplicate)');skipped++;continue;}media.set(id,f);continue;}if(!['txt','json'].includes(ext)||f.size>8*1024*1024)throw Error('Unsupported or oversized definition file '+f.name);const raw=await f.text();const cards=ext==='json'||/^[\s]*[\[{]/.test(raw)?parseJson(raw):parseGml(raw,f.name);if(!cards.length)throw Error('No cards found in '+f.name);if(ext==='txt'&&/^CardStat\s*=/m.test(raw)&&cards.length!==Array.from(raw.matchAll(/^CardStat\s*=\s*\d+/gm)).length)throw Error('Some CardStat blocks could not be parsed in '+f.name);defs.push(...cards);lines.push(`${f.name}: ${cards.length} card definitions`);}
+const plan=planCatalog(published,defs,mode,scope,legacy,allow);const {next,index,added,changed,removed,conflicts}=plan;const assets=[],artIds=[];for(const [id,f] of media){if(!index.has(id)||conflicts.some(x=>x.startsWith('#'+id+':'))||(mode==='replace'&&!defs.some(c=>nID(c.id)===id))){lines.push(`SKIP ${f.name}: no eligible card #${id}`);skipped++;continue;}const bytes=new Uint8Array(await f.arrayBuffer());const ext=f.name.split('.').at(-1).toLowerCase();if(!imageValid(bytes,ext)){lines.push('SKIP invalid image format: '+f.name);skipped++;continue;}const path=`assets/cards/n${id}-${await hashBytes(bytes)}.${ext==='jpeg'?'jpg':ext}`;const c=next[index.get(id)];if(c.image===path)continue;c.image=path;assets.push({path,bytes});artIds.push(id);}
+if(mode==='replace'&&skipped)throw Error('Replacement has skipped artwork/files. Correct them or remove them from the batch before reviewing again.');if(token!==revision)return;
+if(mode==='replace'){lines.push(`REPLACE PRIMARY COLLECTION: ${scope}`,`Existing scoped records: ${plan.old.length}; uploaded replacement IDs: ${new Set(defs.map(c=>c.id)).size}; unrelated records preserved: ${plan.retained}`,`REMOVED (${removed.length}):`,...removed.map(c=>`  #${c.id} ${c.name}`),'REPLACEMENT RECORDS:',...next.filter(c=>defs.some(d=>nID(d.id)===nID(c.id))).map(c=>`  #${c.id} ${c.name}${c.image?'':' [no artwork]'}`));}
+if(added.length)lines.push('NEW: '+added.map(x=>'#'+x).join(', '));if(changed.length)lines.push('UPDATED/REPLACED: '+changed.map(x=>'#'+x).join(', '));if(artIds.length)lines.push('ARTWORK: '+artIds.map(x=>'#'+x).join(', '));if(conflicts.length)lines.push('BLOCKED ID/NAME CONFLICTS: '+conflicts.join('; '));lines.push(`TOTAL: ${published.length} → ${next.length} cards; ${skipped} skipped.`);$('report').textContent=lines.join('\n');$('added').textContent=`${added.length} new cards`;$('updated').textContent=`${changed.length} updated/replaced`;$('removed').textContent=`${removed.length} removed cards`;$('artwork').textContent=`${assets.length} artwork files`;staged={cards:next,assets,added,changed,artIds,removed,replacement:mode==='replace',scope};$('approve-row').hidden=mode!=='replace';$('hint').textContent='Check the full preview before exporting.';refreshExport();}catch(e){if(token===revision)$('report').textContent=[...lines,'EXPORT BLOCKED: '+e.message].join('\n');}finally{busy=false;controls();}}
+function refreshExport(){const s=staged;$('export').disabled=!s||!(s.added.length||s.changed.length||s.removed.length||s.assets.length)||s.replacement&&!$('approve').checked;}
+const enc=new TextEncoder();const crcTable=Uint32Array.from({length:256},(_,n)=>{let c=n;for(let i=0;i<8;i++)c=c&1?0xEDB88320^(c>>>1):c>>>1;return c>>>0;});function crc32(bytes){let c=0xFFFFFFFF;for(const x of bytes)c=crcTable[(c^x)&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0;}
+function zipFiles(entries){const local=[],central=[];let off=0,dirSize=0;for(const [filename,data] of entries){const name=enc.encode(filename),bytes=typeof data==='string'?enc.encode(data):data,crc=crc32(bytes),size=bytes.length;const lh=new Uint8Array(30+name.length),l=new DataView(lh.buffer);l.setUint32(0,0x04034b50,true);l.setUint16(4,20,true);l.setUint16(6,0x0800,true);l.setUint32(14,crc,true);l.setUint32(18,size,true);l.setUint32(22,size,true);l.setUint16(26,name.length,true);lh.set(name,30);local.push(lh,bytes);const ch=new Uint8Array(46+name.length),c=new DataView(ch.buffer);c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint32(16,crc,true);c.setUint32(20,size,true);c.setUint32(24,size,true);c.setUint16(28,name.length,true);c.setUint32(42,off,true);ch.set(name,46);central.push(ch);dirSize+=ch.length;off+=lh.length+size;}const tail=new Uint8Array(22),v=new DataView(tail.buffer);v.setUint32(0,0x06054b50,true);v.setUint16(8,entries.length,true);v.setUint16(10,entries.length,true);v.setUint32(12,dirSize,true);v.setUint32(16,off,true);return new Blob([...local,...central,tail],{type:'application/zip'});}
+function exportChanges(){if(!staged||$('export').disabled)return;const s=staged;try{const touched=new Set([...s.added,...s.changed,...s.artIds]);const entries=[['cards.json',JSON.stringify(s.cards,null,2)+'\n'],['cards-data.js','/* Published catalog for Disgrace DB. Generated by Batch Publisher. */\nwindow.catalog = '+JSON.stringify(s.cards)+';\n'],['README_IMPORT.txt','DISGRACE DB BATCH EXPORT\n\nBack up the repository. Replace cards.json and cards-data.js at the repository root. Merge assets/cards; do not delete old artwork. Commit and push. Godot reads cards.json after sync.\n'+(s.replacement?'Replacement requires the full catalog files; additive legacy import will NOT remove old records.\n':'')],...s.assets.map(x=>[x.path,x.bytes])];if(!s.replacement)entries.push(['legacy_import.json',JSON.stringify(s.cards.filter(c=>touched.has(nID(c.id))),null,2)+'\n']);else entries.push(['removed_records_backup.json',JSON.stringify(s.removed,null,2)+'\n']);const blob=zipFiles(entries),link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=s.replacement?'Disgrace_DB_Archetype_Replacement.zip':'Disgrace_DB_Card_Update.zip';document.body.append(link);link.click();setTimeout(()=>{URL.revokeObjectURL(link.href);link.remove();},5000);$('hint').textContent='ZIP exported. Nothing is online until you commit and push.';}catch(e){$('report').textContent+='\nEXPORT ERROR: '+e.message;}}
+$('reload').addEventListener('click',()=>loadBase());$('base-file').addEventListener('change',()=>{const f=$('base-file').files[0];if(f)loadBase(f);});$('review').addEventListener('click',review);$('export').addEventListener('click',exportChanges);$('approve').addEventListener('change',refreshExport);for(const id of ['mode','scope','legacy','confirm','allow-edits','files'])$(id).addEventListener(id==='confirm'?'input':'change',()=>{invalidate();if(id==='files')$('selected').textContent=`${$('files').files.length} file(s) selected`;controls();});loadBase();
+</script></body></html>
