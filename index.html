@@ -13,7 +13,7 @@
 <body>
 <header class="mast"><div class="wrap brand"><span class="mark" aria-hidden="true">✦</span><span>Buddyfight<small> Custom Cards</small></span></div></header>
 <main class="wrap">
-<section class="hero"><h1>Disgrace DB</h1><p>Browse your Buddyfight collection by name, effect, card ID, or world.</p><button class="action" id="create-card" type="button">Create Card</button> <a class="action" style="background:#b4d8ff" href="./publisher.html">Batch Import &amp; Publish</a></section>
+<section class="hero"><h1>Disgrace DB</h1><p>Browse your Buddyfight collection by name, effect, card ID, or world. Reset baseline: 250 Hashveld cards. Next candidate ID: 5250.</p><button class="action" id="create-card" type="button" disabled title="New numeric-ID editor is coming in the next update">Create Card (next update)</button> <a class="action" style="background:#b4d8ff" href="./publisher.html">Batch Import &amp; Publish</a></section>
 <section id="collection" aria-labelledby="browse"><div class="section-title"><h2 id="browse" tabindex="-1">Explore the collection</h2><p id="count" role="status"></p></div>
 <form id="filters" class="filters" role="search"><label>Search<input id="search" type="search" placeholder="Name, effect, or card ID"></label><label>World or attribute<select id="world"><option value="">All worlds and attributes</option></select></label><label>Card type<select id="type"><option value="">All types</option></select></label><label>Sort by<select id="sort"><option value="id">Card ID</option><option value="name">Name A-Z</option></select></label><button type="reset">Clear filters</button></form>
 <div id="cards" class="grid"></div>
@@ -57,7 +57,7 @@ const world = byId("world");
 const pageSize = 48;
 let page = 0;
 const detail = byId("detail");
-const storageKey = "disgrace-db-created-cards";
+const storageKey = "disgrace-db-created-cards-reset-v1";
 function savedCards() {
   try {
     const value = JSON.parse(localStorage.getItem(storageKey) ?? "[]");
@@ -66,7 +66,7 @@ function savedCards() {
     return [];
   }
 }
-const catalog = [...window.catalog, ...savedCards()];
+const catalog = [...new Map([...window.catalog, ...savedCards()].map(card => [String(card.id), card])).values()];
 const cards = byId("cards");
 const index = new Map(catalog.map(card => [card.id, card]));
 
